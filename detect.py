@@ -5,6 +5,69 @@ import math
 # Path to the video file
 video_path = './videos/autodarts.mp4'
 
+# Global variables for trackbar values
+min_area = 200
+max_area = 5000
+aspect_ratio_threshold = 2
+morphology_kernel_size = 5
+dartboard_line_y = 370
+detection_line_y = 350
+trigger_line_y = 245
+
+# Create a window for trackbars
+cv2.namedWindow('Trackbars', cv2.WINDOW_NORMAL)
+
+
+def on_min_area_change(val):
+    global min_area
+    min_area = val
+
+
+def on_max_area_change(val):
+    global max_area
+    max_area = val
+
+
+def on_aspect_ratio_change(val):
+    global aspect_ratio_threshold
+    aspect_ratio_threshold = val / 10.0
+
+
+def on_morphology_kernel_change(val):
+    global morphology_kernel_size
+    morphology_kernel_size = val if val % 2 == 1 else val + 1
+
+
+def on_dartboard_line_change(val):
+    global dartboard_line_y
+    dartboard_line_y = val
+
+
+def on_detection_line_change(val):
+    global detection_line_y
+    detection_line_y = val
+
+
+def on_trigger_line_change(val):
+    global trigger_line_y
+    trigger_line_y = val
+
+
+# Create trackbars
+cv2.createTrackbar('Min Area', 'Trackbars', min_area, 1000, on_min_area_change)
+cv2.createTrackbar('Max Area', 'Trackbars', max_area,
+                   10000, on_max_area_change)
+cv2.createTrackbar('Aspect Ratio (x10)', 'Trackbars', int(
+    aspect_ratio_threshold * 10), 50, on_aspect_ratio_change)
+cv2.createTrackbar('Morphology Kernel', 'Trackbars',
+                   morphology_kernel_size, 15, on_morphology_kernel_change)
+cv2.createTrackbar('Dartboard Line Y', 'Trackbars',
+                   dartboard_line_y, 700, on_dartboard_line_change)
+cv2.createTrackbar('Detection Line Y', 'Trackbars',
+                   detection_line_y, 700, on_detection_line_change)
+cv2.createTrackbar('Trigger Line Y', 'Trackbars',
+                   trigger_line_y, 700, on_trigger_line_change)
+
 # Open the video file
 cap = cv2.VideoCapture(video_path)
 
@@ -21,51 +84,36 @@ if not ret:
 # Get frame dimensions
 height, width = frame.shape[:2]
 
-# Initial positions for the horizontal lines
-dartboard_line_y = 380  # Middle of the frame
-trigger_line_y = int(height * 0.3)    # Above the dartboard line
+# Tracking for multiple dart trajectories
+dart_trajectories = []
+previous_contour_count = 0
+detection_changed = False
+change_timer = 0
+CHANGE_DURATION = 30  # Number of frames to keep "Changing" state
 
-# Create background subtractor
-bg_subtractor = cv2.createBackgroundSubtractorMOG2(
-    history=20, varThreshold=25, detectShadows=False)
-
-# Previous frame for motion detection
-prev_frame = None
-
-# Variables to store the last detected dart trajectory
-last_dart_line = None
-last_dart_angle = None
-
-# Function to apply thresholding and detect dart
+pre_change_mask = None
 
 
-def process_frame(frame, prev_frame, line1_y, line2_y, last_line, last_angle):
+def process_frame(frame, line1_y, line2_y, line3_y):
+    global dart_trajectories, previous_contour_count, detection_changed, change_timer, pre_change_mask
+
     # Create a region mask between the lines
     region_mask = np.zeros(frame.shape[:2], dtype=np.uint8)
-    region_mask[min(line1_y, line2_y):max(line1_y, line2_y), :] = 255
+    region_mask[min(line2_y, line3_y):max(line2_y, line3_y), :] = 255
 
     # Convert frame to grayscale
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-    # Apply background subtraction to detect moving objects
-    fg_mask = bg_subtractor.apply(frame)
+    # Apply Otsu's thresholding with binary inversion
+    _, thresh = cv2.threshold(
+        gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
-    # Additional motion detection using frame differencing if we have a previous frame
-    if prev_frame is not None:
-        prev_gray = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
-        frame_diff = cv2.absdiff(gray, prev_gray)
-        _, motion_mask = cv2.threshold(frame_diff, 30, 255, cv2.THRESH_BINARY)
-
-        # Combine background subtraction with frame differencing
-        combined_mask = cv2.bitwise_and(fg_mask, motion_mask)
-    else:
-        combined_mask = fg_mask
-
-    # Apply the region mask to keep only motion between the lines
-    final_mask = cv2.bitwise_and(combined_mask, region_mask)
+    # Apply the region mask to keep only the area between lines
+    final_mask = cv2.bitwise_and(thresh, region_mask)
 
     # Apply morphological operations to clean up the mask
-    kernel = np.ones((5, 5), np.uint8)
+    kernel = np.ones(
+        (morphology_kernel_size, morphology_kernel_size), np.uint8)
     final_mask = cv2.morphologyEx(final_mask, cv2.MORPH_OPEN, kernel)
     final_mask = cv2.morphologyEx(final_mask, cv2.MORPH_CLOSE, kernel)
 
@@ -76,7 +124,9 @@ def process_frame(frame, prev_frame, line1_y, line2_y, last_line, last_angle):
     cv2.line(visual_frame, (0, line1_y), (width, line1_y),
              (0, 0, 255), 1)  # Red line (dartboard)
     cv2.line(visual_frame, (0, line2_y), (width, line2_y),
-             (0, 255, 0), 1)  # Green line (trigger)
+             (0, 255, 0), 1)  # Green line (detection)
+    cv2.line(visual_frame, (0, line3_y), (width, line3_y),
+             (0, 255, 255), 1)  # Yellow line (trigger)
 
     # Find contours in the final mask
     contours, _ = cv2.findContours(
@@ -86,104 +136,132 @@ def process_frame(frame, prev_frame, line1_y, line2_y, last_line, last_angle):
     dart_contours = []
     for contour in contours:
         area = cv2.contourArea(contour)
-        if area > 200 and area < 5000:  # Filter by area - adjust these thresholds
+        if min_area < area < max_area:  # Adjustable area filter
             # Check if the shape is elongated (like a dart)
             x, y, w, h = cv2.boundingRect(contour)
             aspect_ratio = max(w, h) / min(w, h)
-            if aspect_ratio > 2:  # Darts are typically elongated
+            if aspect_ratio > aspect_ratio_threshold:  # Adjustable aspect ratio
                 dart_contours.append(contour)
 
-    # Variables to store current dart data
-    current_line = last_line
-    current_angle = last_angle
+    # Check if detection has changed
+    if len(dart_contours) != previous_contour_count:
+        detection_changed = True
+        change_timer = CHANGE_DURATION
 
-    # Process dart contours
-    if dart_contours:
-        # Use the largest valid dart contour
-        dart_contour = max(dart_contours, key=cv2.contourArea)
+    # Decrement change timer
+    if change_timer > 0:
+        change_timer -= 1
+    else:
+        detection_changed = False
 
-        # Draw the contour for visualization
-        cv2.drawContours(visual_frame, [dart_contour], 0, (0, 255, 255), 2)
+    previous_contour_count = len(dart_contours)
+
+    # Clear trajectories if no darts are detected
+    if not dart_contours and not detection_changed:
+        dart_trajectories.clear()
+
+    # Process each dart contour
+    for i, dart_contour in enumerate(dart_contours):
+        # Draw the selected contour in cyan
+        cv2.drawContours(visual_frame, [dart_contour], 0, (255, 255, 0), 2)
 
         # Fit a line to the dart contour
-        [vx, vy, x, y] = cv2.fitLine(dart_contour, cv2.DIST_L2, 0, 0.01, 0.01)
+        try:
+            [vx, vy, x, y] = cv2.fitLine(
+                dart_contour, cv2.DIST_L2, 0, 0.01, 0.01)
 
-        # Extract scalar values from the arrays to fix deprecation warning
-        vx, vy = float(vx[0]), float(vy[0])
-        x, y = float(x[0]), float(y[0])
+            # Extract scalar values from the arrays to fix deprecation warning
+            vx, vy = float(vx[0]), float(vy[0])
+            x, y = float(x[0]), float(y[0])
 
-        # Calculate line endpoints for visualization
-        if abs(vx) > 1e-6:  # Avoid division by zero
-            lefty = int(y - x * (vy / vx))
-            righty = int(y + (width - x) * (vy / vx))
+            # Calculate line endpoints for visualization
+            if abs(vx) > 1e-6:  # Avoid division by zero
+                lefty = int(y - x * (vy / vx))
+                righty = int(y + (width - x) * (vy / vx))
 
-            # Update the current line and angle
-            current_line = ((0, lefty), (width, righty))
+                # Calculate angle
+                angle_rad = math.atan2(vy, vx)
+                angle_deg = math.degrees(angle_rad)
+                if angle_deg < 0:
+                    angle_deg += 180
 
-            # Calculate angle
-            angle_rad = math.atan2(vy, vx)
-            angle_deg = math.degrees(angle_rad)
-            if angle_deg < 0:
-                angle_deg += 180
+                # Draw the trajectory line in blue
+                current_line = ((0, lefty), (width, righty))
+                cv2.line(visual_frame,
+                         current_line[0], current_line[1], (255, 0, 0), 1)
 
-            current_angle = angle_deg
+                # If we haven't tracked this trajectory before, add it
+                if i >= len(dart_trajectories) and not detection_changed:
+                    # Calculate intersection point with dartboard line
+                    intersection_x = None
+                    if abs(vy) > 1e-6:  # Avoid division by zero
+                        dart_x = x + (line1_y - y) * (vx / vy)
+                        if 0 <= dart_x <= width:
+                            intersection_x = dart_x
 
-    # Draw the current or last dart trajectory line if available
-    intersection_x = None
-    if current_line:
-        # Blue line
-        cv2.line(visual_frame, current_line[0],
-                 current_line[1], (255, 0, 0), 1)
+                    dart_trajectories.append({
+                        'line': current_line,
+                        'angle': angle_deg,
+                        'intersection_x': intersection_x
+                    })
 
-        # Calculate intersection point with the dartboard line (red line)
-        p1, p2 = current_line
-        x1, y1 = p1
-        x2, y2 = p2
+        except cv2.error:
+            # Skip if line fitting fails
+            continue
 
-        # Check if the line is not horizontal (to avoid division by zero)
-        if y1 != y2:
-            # Calculate the x-coordinate of intersection
-            # Equation: x = x1 + (line1_y - y1) * (x2 - x1) / (y2 - y1)
-            intersection_x = x1 + (line1_y - y1) * (x2 - x1) / (y2 - y1)
-            intersection_x = int(intersection_x)
-
-            # Check if the intersection point is within the frame width
-            if 0 <= intersection_x < width:
-                # Draw a red circle at the intersection point
-                cv2.circle(visual_frame, (intersection_x, line1_y),
-                           3, (0, 0, 255), -1)  # Red filled circle
-
-                # Display the X coordinate of the intersection point
-                cv2.putText(visual_frame, f"Hit position: {intersection_x}",
-                            (10, 60), cv2.FONT_HERSHEY_SIMPLEX,
-                            0.7, (0, 0, 255), 2)
-
-    # Display the current or last angle if available
-    if current_angle is not None:
-        cv2.putText(visual_frame, f"Angle: {current_angle:.1f} degrees",
-                    (10, 30), cv2.FONT_HERSHEY_SIMPLEX,
+    # Display all tracked angles
+    for i, trajectory in enumerate(dart_trajectories):
+        cv2.putText(visual_frame,
+                    f"Dart {i+1} Angle: {trajectory['angle']:.1f}",
+                    (10, 30 + i * 30),
+                    cv2.FONT_HERSHEY_SIMPLEX,
                     0.7, (255, 0, 0), 2)
+        cv2.circle(visual_frame,
+                   (int(trajectory['intersection_x']), line1_y),
+                   5, (0, 0, 255), -1)
 
-    return visual_frame, final_mask, current_line, current_angle
+    # Display detection status
+    status_color = (0, 0, 255) if detection_changed else (0, 255, 0)
+    status_text = "Changing" if detection_changed else "Stable"
+    cv2.putText(visual_frame,
+                status_text,
+                (width - 150, 50),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1, status_color, 2)
+
+    cv2.putText(visual_frame,
+                f"Dart Count : {len(dart_trajectories)}",
+                (width - 300, 100),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1, (255, 255, 0), 2)
+
+    # Convert mask to 3-channel for side-by-side display
+    final_mask_color = cv2.cvtColor(final_mask, cv2.COLOR_GRAY2BGR)
+
+    return visual_frame, final_mask_color
 
 
 # Main loop to process the video
 while True:
     ret, frame = cap.read()
     if not ret:
-        break
+        # Reset video to the beginning if it reaches the end
+        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+        continue
 
     # Process the frame
-    visual_frame, motion_mask, last_dart_line, last_dart_angle = process_frame(
-        frame, prev_frame, dartboard_line_y, trigger_line_y, last_dart_line, last_dart_angle
+    visual_frame, motion_mask = process_frame(
+        frame, dartboard_line_y, detection_line_y, trigger_line_y
     )
+    cropped_frame = motion_mask[trigger_line_y:detection_line_y, :]
 
-    # Update previous frame
-    prev_frame = frame.copy()
+    # Resize frames to fit side by side
+
+    # Concatenate frames horizontally
+    combined_view = np.vstack((visual_frame, cropped_frame))
 
     # Display the results
-    cv2.imshow('Dart Tracking', visual_frame)
-    cv2.imshow('Motion Mask', motion_mask)
+    cv2.imshow('Dart Detection', combined_view)
 
     # Break the loop if 'q' is pressed
     if cv2.waitKey(25) & 0xFF == ord('q'):
