@@ -1,2 +1,3 @@
-videos/
-__pycache__/
+client/videos/
+client/__pycache__/
+server/tmp/

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dart Game</title>
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+</head>
+<body>
+    <h1>Dart Game</h1>
+    
+    <div id="game-state">
+        {{ range $index, $player := .Players }}
+        <div>
+            <h2>{{ $player.Name }}</h2>
+            <p>Score: <span id="score-{{ $index }}">{{ $player.Score }}</span></p>
+            <p>Last Throws: 
+                <span id="darts-{{ $index }}">
+                    {{ range $player.Darts }}{{ . }} {{ end }}
+                </span>
+            </p>
+        </div>
+        <hr>
+        {{ end }}
+    </div>
+    
+</body>
+</html>
