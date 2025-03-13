@@ -3,9 +3,9 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/gofiber/fiber/v3"
 	"github.com/utiiz/autodarts/views/templates"
 )
 
-func Index(w http.ResponseWriter, r *http.Request) error {
-	return Render(w, r, templates.Index())
+func Index(ctx *fiber.Ctx) error {
 }

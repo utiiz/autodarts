@@ -1,20 +1,22 @@
 package main
 
 import (
+	"log"
 	"log/slog"
-	"net/http"
 
-	"github.com/go-chi/chi/v5"
+	"github.com/gofiber/fiber/v3"
 	_ "github.com/lib/pq"
-	"github.com/utiiz/autodarts/internal/handlers"
 )
 
 func main() {
-	router := chi.NewMux()
+	app := fiber.New()
 
-	router.Get("/", handlers.Make(handlers.Index))
+	// app.Get("/", func(c *fiber.Ctx) error {
+	// 	log.Println("GET /")
+	// 	return nil
+	// })
 
 	listenAddr := ":8080"
 	slog.Info("HTTP Server started", "listenAddr", listenAddr)
-	http.ListenAndServe(listenAddr, router)
+	log.Fatal(app.Listen(listenAddr))
 }

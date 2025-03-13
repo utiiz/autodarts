@@ -37,3 +37,17 @@ class HandDetector:
                     cv2.circle(img, (cx, cy), 15, (255, 0, 255), cv2.FILLED)
 
         return lmList
+
+
+if __name__ == "__main__":
+    cap = cv2.VideoCapture(1)
+    detector = HandDetector()
+
+    while True:
+        success, img = cap.read()
+
+        cv2.imshow("Image", img)
+        cv2.waitKey(1)
+
+    cap.release()
+    cv2.destroyAllWindows()
