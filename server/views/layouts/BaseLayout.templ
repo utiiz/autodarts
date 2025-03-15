@@ -1,0 +1,53 @@
+// Base layout component
+package layouts
+
+import (
+	"fmt"
+	"server/views/components"
+)
+
+templ BaseLayout(route string) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>Document</title>
+			<link rel="stylesheet" href="/static/css/styles.css"/>
+			<script defer src="/static/js/alpine.min.js"></script>
+		</head>
+		<body
+			x-data={ fmt.Sprintf(`{
+				loading: false,
+				content: '',
+				route: '%s',
+				async loadContent(route) {
+					this.loading = true
+					try {
+						const response = await fetch(route, {
+							method: 'GET',
+							headers: {
+								'X-Requested-With': 'AlpineJS',
+								'Accept': 'text/html'
+							}
+						})
+						if (!response.ok) {
+							throw new Error('Failed to fetch content')
+						}
+						this.content = await response.text()
+						this.route = route
+						window.history.pushState(null, '', route)
+					} catch (error) {
+						console.error(error)
+					} finally {
+						this.loading = false
+					}
+				}
+			}`, route) }
+			x-init="loadContent(route)"
+		>
+			@components.Navbar()
+			<main x-html="content"></main>
+		</body>
+	</html>
+}
