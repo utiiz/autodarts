@@ -2,14 +2,34 @@
 package components
 
 templ Navbar() {
-	<nav>
-		<ul>
-			<li>
-				<a href="#" @click="loadContent('/')">Home</a>
-			</li>
-			<li>
-				<a href="#" @click="loadContent('/dashboard')">Dashboard</a>
-			</li>
-		</ul>
-	</nav>
+	<!-- ========== HEADER ========== -->
+	<header class="sticky top-0 inset-x-0 flex flex-wrap md:justify-start md:flex-nowrap z-50 w-full text-sm">
+		<nav class="mt-4 relative max-w-2xl w-full bg-white border border-gray-200 rounded-full mx-2 py-2.5 md:flex md:items-center md:justify-between md:py-0 md:px-4 md:mx-auto">
+			<div class="px-4 md:px-0 flex justify-between items-center w-full py-2">
+				<div>
+					<!-- Logo -->
+					<a
+						href="/"
+						@click.prevent="loadContent('/')"
+						:class="route === '/' ? 'font-bold' : ''"
+						class="flex-none rounded-md text-base inline-block focus:outline-hidden focus:opacity-80"
+					>
+						GoCards
+					</a>
+				</div>
+				<!-- End Logo -->
+				<div>
+					<a
+						href="/dashboard"
+						@click.prevent="loadContent('/dashboard')"
+						:class="route === '/dashboard' ? 'font-bold text-gray-800'
+							: 'text-gray-500'"
+						class="py-0.5 md:py-3 px-4 md:px-1 text-gray-500 hover:text-gray-800 focus:outline-hidden"
+						aria-current="page"
+					>Dashboard</a>
+				</div>
+			</div>
+		</nav>
+	</header>
+	<!-- ========== END HEADER ========== -->
 }

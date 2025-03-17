@@ -18,6 +18,7 @@ func main() {
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 
 		se.Router.GET("/static/{path...}", apis.Static(os.DirFS("./pb_public"), false))
+		se.Router.GET("/avatar/{path...}", apis.Static(os.DirFS("./pb_data/storage/_pb_users_auth_"), false))
 
 		se.Router.GET("/", func(e *core.RequestEvent) error {
 			return handler.Render(e, http.StatusOK, pages.HomePage())
@@ -25,6 +26,14 @@ func main() {
 
 		se.Router.GET("/dashboard", func(e *core.RequestEvent) error {
 			return handler.Render(e, http.StatusOK, pages.DashboardPage())
+		})
+
+		se.Router.GET("/login", func(e *core.RequestEvent) error {
+			return handler.Render(e, http.StatusOK, pages.LoginPage())
+		})
+
+		se.Router.GET("/signup", func(e *core.RequestEvent) error {
+			return handler.Render(e, http.StatusOK, pages.SignupPage())
 		})
 
 		return se.Next()

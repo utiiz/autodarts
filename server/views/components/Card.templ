@@ -1,0 +1,20 @@
+package components
+
+templ Card() {
+	<div class="group flex flex-col h-full aspect-[4/2] border border-gray-200 hover:border hover:shadow-md transition duration-300 rounded-xl p-5">
+		<div>
+			<h3 class="text-xl font-semibold text-gray-800" x-text="item.title"></h3>
+		</div>
+		<div class="my-4">
+			<p class="text-gray-600 text-ellipsis line-clamp-3" x-text="item.content"></p>
+		</div>
+		<div class="mt-auto flex items-center gap-x-3">
+			<img class="size-8 rounded-full" :src="`/avatar/${item.expand.user.id}/${item.expand.user.avatar}`" alt="Avatar"/>
+			<div>
+				<h5 class="text-sm text-gray-800">
+					By <span x-text="item.expand.user.name"></span>
+				</h5>
+			</div>
+		</div>
+	</div>
+}

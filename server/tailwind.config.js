@@ -1,7 +1,7 @@
 module.exports = {
- content: ["./views/**/*.templ"],
- theme: {
- extend: {}
- },
- plugins: []
+    content: ["./views/**/*.templ"],
+    theme: {
+        extend: {},
+    },
+    plugins: [],
  }

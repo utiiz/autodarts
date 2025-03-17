@@ -1,8 +1,98 @@
 // Home page component
 package pages
 
+import "server/views/components"
+
 templ HomePage() {
-	<div>
-		<h1>Home Page</h1>
+	<!-- Hero -->
+	<div class="relative overflow-hidden before:absolute before:top-0 before:start-1/2 before:bg-[url('https://preline.co/assets/svg/examples/squared-bg-element.svg')] before:bg-no-repeat before:bg-top before:size-full before:-z-10 before:transform before:-translate-x-1/2">
+		<div class="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-10">
+			<!-- Title -->
+			<div class="mt-5 max-w-xl text-center mx-auto">
+				<h1 class="block font-bold text-gray-800 text-4xl md:text-5xl lg:text-6xl">
+					Where Cards Go Places
+				</h1>
+			</div>
+			<!-- End Title -->
+			<div class="mt-5 max-w-3xl text-center mx-auto">
+				<p class="text-lg text-gray-600">Get inspired or inspire other.</p>
+			</div>
+			<!-- Buttons -->
+			<div class="mt-8 gap-3 flex justify-center">
+				<a
+					class="
+						inline-flex justify-center items-center gap-x-3 
+						text-center text-white text-sm font-medium
+						bg-gradient-to-tl from-blue-600 to-violet-600
+						hover:from-violet-600 hover:to-blue-600
+						focus:from-violet-600 focus:to-blue-600
+						border border-transparent rounded-full py-3 px-4"
+					href="/login"
+					@click.prevent="loadContent('/login')"
+				>
+					Sign In
+				</a>
+			</div>
+			<!-- End Buttons -->
+		</div>
 	</div>
+	<!-- End Hero -->
+	<!-- Card Blog -->
+	<div class="max-w-[85rem] px-4 py-10 sm:px-6 lg:px-8 lg:py-14 mx-auto">
+		<!-- Title -->
+		<div class="max-w-2xl mx-auto text-center mb-10 lg:mb-14">
+			<h2 class="text-2xl font-bold md:text-4xl md:leading-tight">The Cards</h2>
+			<p class="mt-1 text-gray-600">Latest</p>
+		</div>
+		<!-- End Title -->
+		<!-- Grid -->
+		<div
+			x-data="{
+				loading: false,
+				items: [],
+				page: 0,
+				totalPages: 1,
+				async loadItems() {
+					this.loading=true;
+					try {
+						this.page++;
+						if (this.page > this.totalPages) return;
+
+						const response = await pb.collection('cards').getList(this.page, 9, {
+							sort: '-created',
+							expand: 'user'
+						});
+
+						console.log(response);
+
+						this.items = [...this.items, ...response.items];
+						this.totalPages = response.totalPages
+					} catch (error) {
+						console.log(error);
+					} finally {
+						this.loading = false;
+					}
+				}
+			}"
+			x-init="$nextTick(() => loadItems())"
+		>
+			<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+				<template x-for="item in items">
+					@components.Card()
+				</template>
+			</div>
+			<!-- End Grid -->
+			<!-- Card -->
+			<div class="mt-12 text-center" :disabled="loading" x-show="page < totalPages">
+				<button
+					@click="loadItems"
+					class="py-3 px-4 inline-flex items-center gap-x-1 text-sm font-medium rounded-full border border-gray-200 bg-white text-blue-600 shadow-2xs hover:bg-gray-50 focus:outline-hidden focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
+				>
+					Load more
+				</button>
+			</div>
+			<!-- End Card -->
+		</div>
+	</div>
+	<!-- End Card Blog -->
 }

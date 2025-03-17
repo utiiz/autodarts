@@ -3,6 +3,7 @@ package layouts
 
 import (
 	"fmt"
+	"os"
 	"server/views/components"
 )
 
@@ -12,12 +13,15 @@ templ BaseLayout(route string) {
 		<head>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-			<title>Document</title>
+			<title>GoCards</title>
 			<link rel="stylesheet" href="/static/css/styles.css"/>
 			<script defer src="/static/js/alpine.min.js"></script>
+			<script src="/static/js/pocketbase.min.js"></script>
 		</head>
 		<body
 			x-data={ fmt.Sprintf(`{
+				pb: null,
+				url: '%s',
 				loading: false,
 				content: '',
 				route: '%s',
@@ -43,8 +47,8 @@ templ BaseLayout(route string) {
 						this.loading = false
 					}
 				}
-			}`, route) }
-			x-init="loadContent(route)"
+			}`, os.Getenv("URL"), route) }
+			x-init="pb = new PocketBase(url); loadContent(route)"
 		>
 			@components.Navbar()
 			<main x-html="content"></main>

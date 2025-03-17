@@ -2,3 +2,5 @@ client/videos/
 client/__pycache__/
 server/tmp/
 *.templ_go
+.env
+pb_data/
