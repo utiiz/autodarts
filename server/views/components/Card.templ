@@ -1,20 +1,86 @@
 package components
 
 templ Card() {
-	<div class="group flex flex-col h-full aspect-[4/2] border border-gray-200 hover:border hover:shadow-md transition duration-300 rounded-xl p-5">
-		<div>
+	<div
+		x-data="{ 
+			like: null,
+			likesCount: 0,
+			hover: false,
+			async likeCard() {
+				if (!pb.authStore.isValid) return;
+
+				try {
+
+					if (this.like) {
+						await pb.collection('likes').delete(this.like.id);
+						this.like = null;
+						this.likesCount--;
+						return;
+					}
+
+					this.like = await pb.collection('likes').create({
+						card: item.id,
+						user: pb.authStore.model.id,
+					});
+					this.likesCount++;
+				} catch (error) {
+					console.log(error);
+				}
+			},
+			async getLikes() {
+				pb.autoCancellation(false);
+
+				try {
+					this.likesCount = await pb.collection('likes').getList(1, 1, {
+						filter: `card = '${item.id}'`,
+					}).then(res => res.totalItems);
+				} catch (error) {
+					console.log(error);
+				}
+			},
+			async isLiked() {
+				if (!pb.authStore.isValid) return;
+
+				try {
+					this.like = await pb.collection('likes').getFirstListItem(
+						`card = '${item.id}' && user = '${pb.authStore.model.id}'`
+					).catch(() => null);
+				} catch (error) {
+					console.log(error);
+				}
+			},
+		}"
+		class="group flex flex-col h-full aspect-[4/2] border border-gray-200 hover:border hover:shadow-md transition duration-300 rounded-xl p-5"
+		x-init="getLikes();isLiked();"
+		@mouseenter="hover = true"
+		@mouseleave="hover = false"
+	>
+		<div class="flex items-center justify-between">
 			<h3 class="text-xl font-semibold text-gray-800" x-text="item.title"></h3>
+			<div
+				@click="likeCard()"
+				class="flex gap-x-2 cursor-pointer"
+				:class="like ? 'text-pink-600' : 'text-gray-600'"
+			>
+				<span x-show="hover" x-text="likesCount"></span>
+				<!-- OUTLINED ICONS -->
+				<svg x-show="hover && !like" class="w-6 h-6 stroke-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"></path>
+				</svg>
+				<!-- SOLID ICONS -->
+				<svg x-show="like" class="w-6 h-6 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+					<path d="m11.645 20.91-.007-.003-.022-.012a15.247 15.247 0 0 1-.383-.218 25.18 25.18 0 0 1-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0 1 12 5.052 5.5 5.5 0 0 1 16.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 0 1-4.244 3.17 15.247 15.247 0 0 1-.383.219l-.022.012-.007.004-.003.001a.752.752 0 0 1-.704 0l-.003-.001Z"></path>
+				</svg>
+			</div>
 		</div>
 		<div class="my-4">
 			<p class="text-gray-600 text-ellipsis line-clamp-3" x-text="item.content"></p>
 		</div>
 		<div class="mt-auto flex items-center gap-x-3">
 			<img class="size-8 rounded-full" :src="`/avatar/${item.expand.user.id}/${item.expand.user.avatar}`" alt="Avatar"/>
-			<div>
-				<h5 class="text-sm text-gray-800">
-					By <span x-text="item.expand.user.name"></span>
-				</h5>
-			</div>
+			<h5 class="text-sm text-gray-800">
+				By <span x-text="item.expand.user.name"></span>
+			</h5>
 		</div>
 	</div>
 }

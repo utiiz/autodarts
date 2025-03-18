@@ -1,0 +1,36 @@
+package components
+
+templ EditableCard() {
+	<div>
+		<div
+			x-data="{
+				hover: false,
+			}"
+			class="group flex flex-col w-full h-full aspect-[4/2] border border-gray-200 hover:border hover:shadow-md transition duration-300 rounded-xl p-5"
+			@mouseenter="hover = true"
+			@mouseleave="hover = false"
+		>
+			<div class="flex items-center justify-between">
+				<h3 class="text-xl font-semibold text-gray-800" x-text="item.title"></h3>
+				<button
+					x-show="hover"
+					@click="$dispatch('item-edited', item);"
+					class="w-6 h-6 bg-gradient-to-tl from-blue-600 to-violet-600 hover:from-violet-600 hover:to-blue-600 rounded-md"
+				>
+					<svg class="w-4 h-4 m-1 fill-current text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+						<path d="M21.731 2.269a2.625 2.625 0 0 0-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 0 0 0-3.712ZM19.513 8.199l-3.712-3.712-12.15 12.15a5.25 5.25 0 0 0-1.32 2.214l-.8 2.685a.75.75 0 0 0 .933.933l2.685-.8a5.25 5.25 0 0 0 2.214-1.32L19.513 8.2Z"></path>
+					</svg>
+				</button>
+			</div>
+			<div class="my-4">
+				<p class="text-gray-600 text-ellipsis line-clamp-3" x-text="item.content"></p>
+			</div>
+			<div class="mt-auto flex items-center gap-x-3">
+				<img class="size-8 rounded-full" :src="`/avatar/${item.expand.user.id}/${item.expand.user.avatar}`" alt="Avatar"/>
+				<h5 class="text-sm text-gray-800">
+					By <span x-text="item.expand.user.name"></span>
+				</h5>
+			</div>
+		</div>
+	</div>
+}

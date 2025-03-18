@@ -1,0 +1,12 @@
+package components
+
+templ NewCard() {
+	<div
+		@click="$dispatch('item-created');"
+		class="group flex flex-col h-full justify-center items-center cursor-pointer aspect-[4/2] border border-gray-200 hover:border hover:shadow-md transition duration-300 rounded-xl p-5"
+	>
+		<div class="my-4">
+			<h3 class="text-xl font-semibold text-gray-800">Create new card</h3>
+		</div>
+	</div>
+}

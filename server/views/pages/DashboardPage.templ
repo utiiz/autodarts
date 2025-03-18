@@ -67,36 +67,45 @@ templ DashboardPage() {
 					<!-- Grid -->
 					<div
 						x-data="{
-						loading: false,
-						items: [],
-						page: 0,
-						totalPages: 1,
-						async loadItems() {
-							this.loading=true;
-							try {
-								this.page++;
-								if (this.page > this.totalPages) return;
+							loading: false,
+							items: [],
+							page: 0,
+							totalPages: 1,
+							editing: false,
+							async loadItems(reset = false) {
+								this.loading=true;
+								if (reset) {
+									this.page = 0;
+									this.items = [];
+								}
+								if (!reset) this.page++;
+								try {
+									if (this.page > this.totalPages) return;
 
-								const response = await pb.collection('cards').getList(this.page, 9, {
-									sort: '-created',
-									filter: `user = '${pb.authStore.model.id}'`,
-									expand: 'user'
-								});
+									const response = await pb.collection('cards').getList(this.page, 9, {
+										sort: '-created',
+										filter: `user = '${pb.authStore.model.id}'`,
+										expand: 'user'
+									});
 
-								this.items = [...this.items, ...response.items];
-								this.totalPages = response.totalPages
-							} catch (error) {
-								console.log(error);
-							} finally {
-								this.loading = false;
+									this.items = [...this.items, ...response.items];
+									this.totalPages = response.totalPages
+									if (reset) this.page++;
+								} catch (error) {
+									console.log(error);
+								} finally {
+									this.loading = false;
+								}
 							}
-						}
-					}"
+						}"
 						x-init="$nextTick(() => loadItems())"
+						@items-modified.window="loadItems(true)"
+						@items-created.window="loadItems(true)"
 					>
 						<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+							@components.NewCard()
 							<template x-for="item in items">
-								@components.Card()
+								@components.EditableCard()
 							</template>
 						</div>
 						<!-- End Grid -->
@@ -113,6 +122,7 @@ templ DashboardPage() {
 					</div>
 					<!-- End Card Blog -->
 				</div>
+				@components.ModalEditCard()
 			</div>
 		</template>
 	</div>

@@ -11,8 +11,8 @@ templ Navbar() {
 					<a
 						href="/"
 						@click.prevent="loadContent('/')"
-						:class="route === '/' ? 'font-bold' : ''"
-						class="flex-none rounded-md text-base inline-block focus:outline-hidden focus:opacity-80"
+						:class="route === '/' ? 'font-bold text-gray-800' : 'text-gray-500'"
+						class="flex gap-x-2 items-center text-base inline-block focus:outline-hidden focus:opacity-80"
 					>
 						GoCards
 					</a>
