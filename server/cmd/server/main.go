@@ -16,6 +16,9 @@ func main() {
 	app := pocketbase.New()
 
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
+		se.Router.GET("/ws", func(e *core.RequestEvent) error {
+			return handler.WS(e)
+		})
 
 		se.Router.GET("/static/{path...}", apis.Static(os.DirFS("./pb_public"), false))
 		se.Router.GET("/avatar/{path...}", apis.Static(os.DirFS("./pb_data/storage/_pb_users_auth_"), false))
@@ -26,6 +29,15 @@ func main() {
 
 		se.Router.GET("/dashboard", func(e *core.RequestEvent) error {
 			return handler.Render(e, http.StatusOK, pages.DashboardPage())
+		})
+
+		se.Router.GET("/game", func(e *core.RequestEvent) error {
+			return handler.Render(e, http.StatusOK, pages.GamePage())
+		})
+
+		se.Router.POST("/game", func(e *core.RequestEvent) error {
+			log.Print("New game")
+			return nil
 		})
 
 		se.Router.GET("/login", func(e *core.RequestEvent) error {

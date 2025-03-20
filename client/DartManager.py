@@ -1,6 +1,5 @@
 import cv2
 import json
-import asyncio
 import websockets
 from threading import Thread
 from DartDetector import DartDetector

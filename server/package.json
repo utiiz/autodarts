@@ -1,1 +1,5 @@
-{ "dependencies": { "tailwindcss": "latest" } }
+{
+  "dependencies": {
+    "tailwindcss": "^4.0.14"
+  }
+}

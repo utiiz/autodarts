@@ -57,6 +57,7 @@ class DartDetector:
         """
         Process the current frame and return a boolean indicating if there is a change.
         """
+
         frame = self.get_frame()
         _, self.width, _ = frame.shape
         mask = self.get_mask(frame)
@@ -96,8 +97,8 @@ class DartDetector:
     def get_frame(self):
         ret, frame = self.cap.read()
         if not ret:
-            print("Error: Could not read from video file.")
-            exit()
+            self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            ret, frame = self.cap.read()
         return frame
 
     def get_visual_frame(self, frame, contours=None):

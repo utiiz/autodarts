@@ -7,7 +7,6 @@ templ Navbar() {
 		<nav class="mt-4 relative max-w-2xl w-full bg-white border border-gray-200 rounded-full mx-2 py-2.5 md:flex md:items-center md:justify-between md:py-0 md:px-4 md:mx-auto">
 			<div class="px-4 md:px-0 flex justify-between items-center w-full py-2">
 				<div>
-					<!-- Logo -->
 					<a
 						href="/"
 						@click.prevent="loadContent('/')"
@@ -17,7 +16,16 @@ templ Navbar() {
 						GoCards
 					</a>
 				</div>
-				<!-- End Logo -->
+				<div>
+					<a
+						href="/game"
+						@click.prevent="loadContent('/game')"
+						:class="route === '/game' ? 'font-bold text-gray-800' : 'text-gray-500'"
+						class="flex gap-x-2 items-center text-base inline-block focus:outline-hidden focus:opacity-80"
+					>
+						Game
+					</a>
+				</div>
 				<div>
 					<a
 						href="/dashboard"

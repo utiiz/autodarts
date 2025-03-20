@@ -1,6 +1,7 @@
 client/videos/
 client/__pycache__/
 server/tmp/
+server/node_modules/
 *.templ_go
 .env
 pb_data/
