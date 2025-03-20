@@ -72,6 +72,16 @@ func (cm *ConnectionManager) Broadcast(message []byte) {
 	}
 }
 
+func (cm *ConnectionManager) Send(message []byte, uuid string) {
+	cm.mutex.RLock()
+	defer cm.mutex.RUnlock()
+
+	client, exists := cm.Clients[uuid]
+	if exists {
+		client.Connection.WriteMessage(websocket.TextMessage, message)
+	}
+}
+
 // ClientCount returns the number of connected clients
 func (cm *ConnectionManager) ClientCount() int {
 	cm.mutex.RLock()

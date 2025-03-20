@@ -1,6 +1,3 @@
-import os
-from os.path import join, dirname
-from dotenv import load_dotenv
 import websocket
 import time
 import json
@@ -30,11 +27,9 @@ class Message:
 
 
 class WebSocket:
-    def __init__(self):
-        env_path = join(dirname(__file__), ".env")
-        load_dotenv(env_path)
-        self.UUID = os.environ.get("UUID")
-
+    def __init__(self, UUID, on_message=None):
+        self.UUID = UUID
+        self.on_message = on_message
         self.ws = websocket.WebSocketApp("ws://127.0.0.1:8090/ws",
                                          on_open=self.on_open,
                                          on_message=self.on_message,
@@ -43,9 +38,6 @@ class WebSocket:
 
     def start(self):
         self.ws.run_forever()
-
-    def on_message(self, ws, message):
-        print(f"Received message: {message}")
 
     def on_error(self, ws, error):
         print(f"Error occurred: {error}")
@@ -70,5 +62,4 @@ if __name__ == "__main__":
 
     # Keep main thread alive
     while True:
-        print("Main thread running...")
         time.sleep(5)

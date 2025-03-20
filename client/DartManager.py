@@ -1,8 +1,12 @@
+import os
+from os.path import join, dirname
+from dotenv import load_dotenv
 import cv2
 import json
 import websockets
 from threading import Thread
 from DartDetector import DartDetector
+from WebSocket import WebSocket, Message
 from Triangulator import Triangulator, Camera
 from Dartboard import Dartboard
 
@@ -19,6 +23,10 @@ class Dart:
 
 class DartManager:
     def __init__(self, dartboard, frame_rate=30, debug=False):
+        env_path = join(dirname(__file__), ".env")
+        load_dotenv(env_path)
+        self.UUID = os.environ.get("UUID")
+
         self.dart = None
         self.dartboard = dartboard
         self.frame_rate = frame_rate
@@ -83,11 +91,38 @@ class DartManager:
         async with websockets.connect(uri) as websocket:
             await websocket.send(json.dumps(data))
 
+    def on_message(self, ws, message):
+        print(f"Received message: {message}")
+        # Parse message and make it into an object EventData
+        message = json.loads(message, object_hook=lambda d: Message(**d))
+
+        if message.type == "GAME_START":
+            print("GAME ON")
+            Thread(target=self.update, daemon=True).start()
+
+    def shutdown(self):
+        """Properly shut down all components"""
+        print("Shutting down DartManager...")
+        self.running.clear()  # Signal threads to stop
+
+        # Clean up detectors
+        for detector in self.detectors:
+            if detector:
+                detector.release()
+
+        # Clear any remaining data
+        if hasattr(self, 'dart'):
+            self.dart = None
+
 
 def main():
     dartboard = Dartboard()
     dart_manager = DartManager(dartboard=dartboard, debug=True)
-    Thread(target=dart_manager.update, daemon=True).start()
+
+    ws = WebSocket(dart_manager.UUID, on_message=dart_manager.on_message)
+    ws_thread = Thread(target=ws.start, daemon=True)
+    ws_thread.start()
+
     dartboard.start()
 
 

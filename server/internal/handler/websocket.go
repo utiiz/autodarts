@@ -19,14 +19,12 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-func WS(e *core.RequestEvent) error {
+func WS(e *core.RequestEvent, cm *ws.ConnectionManager) error {
 	conn, err := upgrader.Upgrade(e.Response, e.Request, nil)
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
-
-	var cm = ws.NewConnectionManager()
 
 	for {
 		var message ws.Message
@@ -47,8 +45,6 @@ func WS(e *core.RequestEvent) error {
 			log.Printf("Received: %s", data.UUID)
 			cm.Register(data.UUID, conn)
 		}
-
-		cm.Broadcast([]byte("Hello, World!"))
 	}
 	return nil
 }

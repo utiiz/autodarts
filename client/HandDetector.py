@@ -40,14 +40,15 @@ class HandDetector:
 
 
 if __name__ == "__main__":
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture('./videos/CAM_02_03.mp4')
     detector = HandDetector()
 
     while True:
         success, img = cap.read()
+        detector.findHands(img)
 
         cv2.imshow("Image", img)
-        cv2.waitKey(1)
+        cv2.waitKey(30)
 
     cap.release()
     cv2.destroyAllWindows()

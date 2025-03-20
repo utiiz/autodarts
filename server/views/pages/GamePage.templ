@@ -6,15 +6,19 @@ templ GamePage() {
 	<div
 		x-data="{
 			auth: pb.authStore,
-			game: null,
 			async start() {
 				// Create Game
 				try {
-					this.game = await pb.collection('games').create({
+					await pb.collection('games').create({
 						uuid: crypto.randomUUID(),
 						status: 'in_progress',
-						player_1: pb.authStore.model.id
+						players: [pb.authStore.model.id]
 					});
+					await fetch('/test/game', {
+						method:  'POST',
+						body:    JSON.stringify({dartboard: this.auth.model.settings.dartboard}),
+						headers: {'content-type': 'application/json'},
+					})
 				} catch (error) {
 					console.log(error);
 				}
@@ -61,7 +65,7 @@ templ GamePage() {
 						<template x-for="game in games">
 							<!-- Card -->
 							<div class="group flex flex-col h-full bg-white border border-gray-200 shadow-2xs rounded-xl">
-								<div class="h-52 flex flex-col justify-center items-center bg-blue-600 rounded-t-xl">
+							<div class="bg-blue-600 h-52 flex flex-col justify-center items-center rounded-t-xl">
 									<svg class="size-28" width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
 										<rect width="56" height="56" rx="10" fill="white"></rect>
 										<path d="M20.2819 26.7478C20.1304 26.5495 19.9068 26.4194 19.6599 26.386C19.4131 26.3527 19.1631 26.4188 18.9647 26.5698C18.848 26.6622 18.7538 26.78 18.6894 26.9144L10.6019 43.1439C10.4874 43.3739 10.4686 43.6401 10.5496 43.884C10.6307 44.1279 10.805 44.3295 11.0342 44.4446C11.1681 44.5126 11.3163 44.5478 11.4664 44.5473H22.7343C22.9148 44.5519 23.0927 44.5037 23.2462 44.4084C23.3998 44.3132 23.5223 44.1751 23.5988 44.011C26.0307 38.9724 24.5566 31.3118 20.2819 26.7478Z" fill="url(#paint0_linear_2204_541)"></path>
@@ -83,7 +87,7 @@ templ GamePage() {
 									<a class="w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-es-xl bg-white text-gray-800 shadow-2xs hover:bg-gray-50 focus:outline-hidden focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none" href="#">
 										Join a game
 									</a>
-									<a class="w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-ee-xl bg-white text-gray-800 shadow-2xs hover:bg-gray-50 focus:outline-hidden focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none" href="#">
+									<a class="w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-ee-xl bg-white text-gray-800 shadow-2xs hover:bg-gray-50 focus:outline-hidden focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none" href="#" @click.prevent="start">
 										Start a game
 									</a>
 								</div>
